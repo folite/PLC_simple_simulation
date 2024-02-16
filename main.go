@@ -13,6 +13,16 @@ import (
 var DM = make(map[string]int)
 
 func Init() {
+	DM["1001"] = 0
+	DM["1002"] = 0
+	DM["2001"] = 0
+	DM["2002"] = 0
+	DM["2003"] = 0
+	DM["2004"] = 0
+	DM["2005"] = 0
+	DM["2006"] = 0
+	DM["2007"] = 0
+	return
 	for i := 1001; i <= 1002; i++ {
 		DM[strconv.Itoa(i)] = i
 	}
@@ -71,7 +81,7 @@ func ParseCMD(cmd string) string {
 	if reg_rds1001.MatchString(cmd) || reg_rds2001.MatchString(cmd) {
 		split := strings.Split(cmd, " ")
 		id := split[1][2:6]
-		step, _ := strconv.Atoi(string(split[2][0]))
+		step, _ := strconv.Atoi(strings.Split(split[2], "\r")[0])
 		s := ""
 		for i := 0; i < step; i++ {
 			nid, _ := strconv.Atoi(id)
@@ -81,7 +91,13 @@ func ParseCMD(cmd string) string {
 	}
 	reg_wr, _ := regexp.Compile(`^WR `)
 	if reg_wr.MatchString(cmd) {
-		strings.Split(cmd, " ")
+		split := strings.Split(cmd, " ")
+		a := strings.Split(split[2], "\r")
+		data, _ := strconv.Atoi(a[0])
+		_, err := WR(split[1][2:6], data)
+		if err == nil {
+			return "OK\r\n"
+		}
 	}
 
 	// if err == nil {
