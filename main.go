@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net"
 	"regexp"
 	"strconv"
@@ -15,25 +16,28 @@ var DM = make(map[string]int)
 func Init() {
 	DM["1001"] = 0
 	DM["1002"] = 0
-	DM["2001"] = 0
+	DM["2001"] = 2
 	DM["2002"] = 0
 	DM["2003"] = 0
-	DM["2004"] = 0
+	DM["2004"] = 2
 	DM["2005"] = 0
 	DM["2006"] = 0
 	DM["2007"] = 0
+	DM["2008"] = 0
+	DM["2009"] = 0
+	DM["2010"] = 0
 	return
-	for i := 1001; i <= 1002; i++ {
-		DM[strconv.Itoa(i)] = i
-	}
-	for i := 2001; i <= 2007; i++ {
-		DM[strconv.Itoa(i)] = i
-	}
+	// for i := 1001; i <= 1002; i++ {
+	// 	DM[strconv.Itoa(i)] = i
+	// }
+	// for i := 2001; i <= 2007; i++ {
+	// 	DM[strconv.Itoa(i)] = i
+	// }
 }
 
 func main() {
 	Init()
-	li, err := net.Listen("tcp", ":8501")
+	li, err := net.Listen("tcp", "127.0.0.1:8501")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -66,18 +70,29 @@ func handleConn(conn net.Conn) {
 		cmd := string(bytes[:n])
 		log.Printf("Received : %q\n", cmd)
 		res := []byte((ParseCMD(cmd)))
+		if DM["2001"] == 1 {
+			go Mock()
+		}
 		conn.Write(res)
 
 	}
 }
 func ParseCMD(cmd string) string {
+	reg_init, _ := regexp.Compile(`^init`)
+	if reg_init.MatchString(cmd) {
+		Init()
+		return "OK\r\n"
+	}
 	reg_rd, _ := regexp.Compile(`^RD `)
 	if reg_rd.MatchString(cmd) {
-		a := strings.Split(cmd, " ")
-		log.Printf("%v+", a)
+		split := strings.Split(cmd, " ")
+		res, err := RD(split[1][2:6])
+		if err == nil {
+			return strconv.Itoa(res) + "\r\n"
+		}
 	}
 	reg_rds1001, _ := regexp.Compile(`^RDS DM1001.H 2`)
-	reg_rds2001, _ := regexp.Compile(`^RDS DM2001.H 7`)
+	reg_rds2001, _ := regexp.Compile(`^RDS DM2001.H 10`)
 	if reg_rds1001.MatchString(cmd) || reg_rds2001.MatchString(cmd) {
 		split := strings.Split(cmd, " ")
 		id := split[1][2:6]
@@ -99,11 +114,6 @@ func ParseCMD(cmd string) string {
 			return "OK\r\n"
 		}
 	}
-
-	// if err == nil {
-	// log.Print(reg)
-	// }
-
 	return "E1\r\n"
 }
 
@@ -126,4 +136,15 @@ func RD(index string) (int, error) {
 func WR(index string, data int) (int, error) {
 	DM[index] = data
 	return data, nil
+}
+
+func Mock() {
+	DM["2007"] += rand.Intn(100)
+	DM["2010"] += rand.Intn(100)
+	if DM["2007"] > 5000 {
+		DM["2001"] = 2
+	}
+	if DM["2001"] != 1 {
+		return
+	}
 }
